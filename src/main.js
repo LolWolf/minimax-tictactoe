@@ -2,6 +2,11 @@ var canvas;
 var context;
 var width, height;
 var cell = new Array();
+var status_text;
+
+var leaf_count=0;
+
+var playing=true;
 
 var s_size = 50; //Symbol Size
 
@@ -15,6 +20,8 @@ function nextMove() {
 	var best = {score:-INFTY, move:-1}
 	var temp_score = -INFTY;
 
+	leaf_count=0;
+	
 	for(var i=0; i<9; i++) {
 		if(isEmpty(i)) {
 			//Make possible move
@@ -35,6 +42,9 @@ function nextMove() {
 		}
 	}
 	
+	setScore(best.score);
+	setCount(leaf_count);
+
 	//Perform best move
 	cell[best.move] = 2;
 
@@ -44,8 +54,8 @@ function nextMove() {
 
 	//Check for win
 	if(checkWinner()==2) {
-		alert("Sorry, you lost... try again?");
-		clearBoard();
+		playing = false;
+		setStatus("Sorry, you lost... try again?");
 	}
 }
 
@@ -54,6 +64,7 @@ function negaMax(player) {
 	//Check and add accordingly for possible win
 	var a = checkWinner();
 	if(a>0) {
+		leaf_count++;
 		if(a==player) return 100;
 		else return -100;
 	}
@@ -98,6 +109,7 @@ function checkTie() {
 //Declared for loading the document, canvas, et al, and initiating drawing.
 function onLoad() {
 	canvas = document.getElementById("cnv");
+
 	if(canvas.getContext) {
 		loginfo("Canvas loaded correctly");
 		context = canvas.getContext('2d');
@@ -107,12 +119,23 @@ function onLoad() {
 		return;
 	}
 
+	status_text = document.getElementById('status');
+	score_text = document.getElementById('score');
+	count_text = document.getElementById('count');
+
 	init();
 }
 
 function init() {
+	playing = true;
+
 	width = 300;
 	height = 300;
+	leaf_count = 0;
+
+	setCount(leaf_count);
+	setScore("-INFTY");
+	setStatus("Ready to begin (player turn).")
 
 	for(var i=0; i<9; i++)
 		cell[i]=0;
@@ -122,8 +145,8 @@ function init() {
 
 function drawX(x, y) {
 	context.beginPath();
-
-	context.lineWidth = 2.;
+	context.strokeStyle="#0099FF";
+	context.lineWidth = 3.;
 
 	context.moveTo(x-s_size/2, y-s_size/2);
 	context.lineTo(x+s_size/2, y+s_size/2);
@@ -139,7 +162,8 @@ function drawX(x, y) {
 function drawO(x, y) {
 	context.beginPath();
 
-	context.lineWidth=2.;
+	context.strokeStyle="#FF9900";
+	context.lineWidth=3.;
 
 	context.arc(x, y, s_size/2,
 		0, 2*Math.PI, false);
@@ -152,6 +176,9 @@ function drawO(x, y) {
 //Draw the canvas
 function drawCanvas() {
 	context.beginPath();
+
+	context.strokeStyle="#000000"
+	context.lineWidth = 1.;
 
 	context.moveTo(width/3, 0);
 	context.lineTo(width/3, height);
@@ -178,6 +205,9 @@ function getCellXY(cell_clicked) {
 }
 
 function onClick(e) {
+	if(!playing) return;
+	setStatus("Playing; player turn.")
+
 	var pos = getRelPos(e);
 	//loginfo("Mouse Click on: "+pos.x+" "+pos.y);
 
@@ -187,15 +217,14 @@ function onClick(e) {
 		cell[cell_clicked] = 1;
 		var a = getCellXY(cell_clicked);
 		drawX(a.x, a.y);
-		//negaMax();
 	}
 	if(checkWinner()==1) {
-		alert("Nice job, mate, you won.");
-		clearBoard();
+		playing = false;
+		setStatus("Nice job, mate, you won.");
 	}
 	else if(checkTie()) {
-		alert("It's a Tie");
-		clearBoard();
+		playing = false;
+		setStatus("It's a tie.");
 	}
 	else
 		nextMove();
@@ -214,11 +243,6 @@ function clearBoard() {
 	init();
 }
 
-//Not efficient by any means, I'd rather use a bitmask, but this is easier to
-//grasp.
-function clone(o) {
-	return o.slice(0);
-}
 //Just a crapload of cases
 function checkWinner() {
 	if(cell[4]!=0) {
@@ -252,7 +276,7 @@ function getCell(cell_x, cell_y, board) {
 	if(cell_x>=0 && cell_x<=2 && cell_y>=0 && cell_y<=2)
 		return board[cell_x+3*cell_y];
 	else {
-		logerr("WTF, you just put in a cell that doesn't exist");
+		logerr("WTF, you just put in a cell that doesn't exist.");
 		return -1;
 	}
 }
@@ -268,4 +292,13 @@ function loginfo(e) {
 }
 function logerr(e) {
 	console.log("ERROR: "+e);
+}
+function setStatus(e) {
+	status_text.innerHTML="<b>Status:</b> "+e;
+}
+function setScore(e) {
+	score_text.innerHTML="<b>Possible min score (for computer):</b> "+e;
+}
+function setCount(e) {
+	count_text.innerHTML="<b>Total leaf count:</b> "+e;
 }
