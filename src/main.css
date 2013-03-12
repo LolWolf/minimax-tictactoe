@@ -33,10 +33,14 @@ canvas {
 	border-radius: 5px;
 	color: white;
 	cursor: pointer;
+
+	transition: background-color .1s ease-in;
 }
 
 .button:hover {
-	transition
+	background-color: #00BBFF;
+	
+	transition: background-color .1s ease-in;
 }
 
 #button_container {

@@ -17,9 +17,13 @@ var INFTY = 100000;
 //===============================BEGIN NEGAMAX ALGORITHM================================
 
 function nextMove() {
+	//Set best as lowest possible
 	var best = {score:-INFTY, move:-1}
-	var temp_score = -INFTY;
+	
+	//Temporary variable for score
+	var temp_score = 0;
 
+	//Counter for the label
 	leaf_count=0;
 	
 	for(var i=0; i<9; i++) {
@@ -42,10 +46,11 @@ function nextMove() {
 		}
 	}
 	
+	//Set label values
 	setScore(best.score);
 	setCount(leaf_count);
 
-	//Perform best move
+	//Perform best computed move
 	cell[best.move] = 2;
 
 	//Draw move performed
@@ -70,7 +75,10 @@ function negaMax(player) {
 	}
 
 	//Check and add accordingly for possible tie
-	if(checkTie()) return 0;
+	if(checkTie()) {
+		leaf_count++;
+		return 0;
+	} 
 
 	//Initiate temporary variables
 	var max = -INFTY;
@@ -83,7 +91,7 @@ function negaMax(player) {
 			cell[i]=player;
 
 			//Compute best score
-			temp = -negaMax(player==1 ? 2:1);
+			temp = -negaMax(player==1 ? 2:1)*.5;
 			
 			//Undo previous move
 			cell[i]=0;
@@ -99,14 +107,7 @@ function negaMax(player) {
 
 //===============================END NEGAMAX ALGORITHM================================
 
-function checkTie() {
-	for(var i=0; i<9; i++) {
-		if(cell[i]==0) return false;
-	}
-	return true;
-}
-
-//Declared for loading the document, canvas, et al, and initiating drawing.
+//Declared for loading the document, canvas, et al, and initiating drawing
 function onLoad() {
 	canvas = document.getElementById("cnv");
 
@@ -126,6 +127,7 @@ function onLoad() {
 	init();
 }
 
+//Initialize all of the labels and the board
 function init() {
 	playing = true;
 
@@ -143,6 +145,13 @@ function init() {
 	drawCanvas();
 }
 
+//Clear the board
+function clearBoard() {
+	context.clearRect(0, 0, width, height);
+	init();
+}
+
+//Function to draw the "X" (pass in the center point)
 function drawX(x, y) {
 	context.beginPath();
 	context.strokeStyle="#0099FF";
@@ -159,6 +168,7 @@ function drawX(x, y) {
 	context.closePath();
 }
 
+//Function to draw "O" (also pass in the center point) 
 function drawO(x, y) {
 	context.beginPath();
 
@@ -197,6 +207,7 @@ function drawCanvas() {
 	context.closePath();
 }
 
+//Get the location of the center of the cell
 function getCellXY(cell_clicked) {
 	return {
 		x:(cell_clicked%3)*100+50,
@@ -204,12 +215,12 @@ function getCellXY(cell_clicked) {
 	};
 }
 
+//Click handler
 function onClick(e) {
 	if(!playing) return;
 	setStatus("Playing; player turn.")
 
 	var pos = getRelPos(e);
-	//loginfo("Mouse Click on: "+pos.x+" "+pos.y);
 
 	var cell_clicked = Math.floor(3*pos.x/width) + 3*Math.floor(3*pos.y/height);
 
@@ -230,17 +241,13 @@ function onClick(e) {
 		nextMove();
 }
 
+//Get the relative position of the board
 function getRelPos(e) {
 	var boundRect = canvas.getBoundingClientRect();
 	return {
 		x: Math.floor(e.clientX - boundRect.left),
 		y: Math.floor(e.clientY - boundRect.top)
 	};
-}
-
-function clearBoard() {
-	context.clearRect(0, 0, width, height);
-	init();
 }
 
 //Just a crapload of cases
@@ -272,6 +279,15 @@ function checkWinner() {
 	return 0;
 }
 
+//Check for a tie. Run only after checking for a winner
+function checkTie() {
+	for(var i=0; i<9; i++) {
+		if(cell[i]==0) return false;
+	}
+	return true;
+}
+
+//Get the cell's value from (x, y), with error checking
 function getCell(cell_x, cell_y, board) {
 	if(cell_x>=0 && cell_x<=2 && cell_y>=0 && cell_y<=2)
 		return board[cell_x+3*cell_y];
@@ -281,18 +297,21 @@ function getCell(cell_x, cell_y, board) {
 	}
 }
 
+//Check for empty (used for abstraction and making the snippets more understandable)
 function isEmpty(cellno) {
 	//loginfo("Is empty on "+cellno+" result "+cell[cellno]);
 	return cell[cellno]==0;
 }
 
-//Logging funtions.
+//Logging funtions
 function loginfo(e) {
 	console.log("INFO: "+e);
 }
 function logerr(e) {
 	console.log("ERROR: "+e);
 }
+
+//Functions for statuses
 function setStatus(e) {
 	status_text.innerHTML="<b>Status:</b> "+e;
 }
